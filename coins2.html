@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Coin Catching Game 2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #555;
+            color: white;
+            position: relative;
+        }
+        #game-container {
+            width: 90%;
+            height: 70vh;
+            border: 2px solid cyan;
+            position: relative;
+            background-color: #444;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        #coin {
+            width: 60px;
+            height: 60px;
+            background-color: cyan;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.2s ease-out;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            display: none; /* Rejtett a kezdetekor */
+            text-align: center;
+            line-height: 60px;
+            font-weight: bold;
+            color: black;
+            font-size: 24px;
+        }
+        #coin:hover {
+            transform: scale(1.2);
+        }
+        #score-display, #send-score-btn {
+            margin-top: 20px;
+            font-size: 28px;
+        }
+        #send-score-btn {
+            padding: 10px 20px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        #send-score-btn:hover {
+            background-color: #006666;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Coin Catching Game 2</h1>
+    <div id="game-container">
+        <div id="coin">2</div>
+    </div>
+    <div id="score-display">Pontszám: 0</div>
+    <button id="send-score-btn">Pontszám küldése a botnak</button>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const coin = document.getElementById('coin');
+        const scoreDisplay = document.getElementById('score-display');
+        const sendScoreBtn = document.getElementById('send-score-btn');
+        let score = 0;
+        let isStarted = false;
+
+        const Telegram = window.Telegram.WebApp;
+
+        function getRandomPosition() {
+            const containerWidth = gameContainer.offsetWidth - coin.offsetWidth;
+            const containerHeight = gameContainer.offsetHeight - coin.offsetHeight;
+            const x = Math.random() * containerWidth;
+            const y = Math.random() * containerHeight;
+            return { x, y };
+        }
+
+        function moveCoin() {
+            if (!isStarted) return;
+            const { x, y } = getRandomPosition();
+            coin.style.left = `${x}px`;
+            coin.style.top = `${y}px`;
+            coin.style.display = 'block';
+        }
+
+        function startGame() {
+            isStarted = true;
+            score = 0;
+            scoreDisplay.textContent = `Pontszám: ${score}`;
+            moveCoin();
+        }
+
+        coin.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            score++;
+            scoreDisplay.textContent = `Pontszám: ${score}`;
+            moveCoin();
+        });
+
+        gameContainer.addEventListener('click', () => {
+            if (!isStarted) {
+                startGame();
+            }
+        });
+
+        sendScoreBtn.addEventListener('click', () => {
+            if (score > 0) {
+                const data = {
+                    game: "coins2",
+                    score: score,
+                    user_id: Telegram.initDataUnsafe.user.id || 'unknown'
+                };
+                Telegram.sendData(JSON.stringify(data));
+            } else {
+                alert("Nincs mit elküldeni! Gyűjts pontokat.");
+            }
+        });
+    </script>
+</body>
+</html>
