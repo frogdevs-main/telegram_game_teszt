@@ -158,15 +158,16 @@
                     action: "game_button_pressed"
                 }));
             } catch (e) {
-                alert("Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.");
-                console.error(e);
+                // A hiba kezelése anélkül, hogy alertet használnánk
+                console.error("Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.", e);
             }
         }
 
         function sendScore() {
             // A games.js API-t már nem használjuk, így ez a funkció egyelőre nem csinál semmit.
             // A toplistát a Web App logikával, a saját szervereden keresztül lehetne megvalósítani.
-            alert("A pontszámküldés ehhez a verzióhoz nincs implementálva.");
+            // A hiba kezelése anélkül, hogy alertet használnánk
+            console.log("A pontszámküldés ehhez a verzióhoz nincs implementálva.");
         }
 
         // Eseménykezelők
