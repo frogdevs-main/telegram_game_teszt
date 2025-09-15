@@ -3,22 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapd el az Érmét!</title>
-    <!-- 1. JAVÍTÁS: A helyes szkript a 'send_game'-hez indított játékokhoz -->
-    <script src="https://telegram.org/js/games.js"></script>
+    <title>Érmegyűjtő Játék</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS Stílusok (VÁLTOZATLAN) */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #2d3748;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
-            color: #333;
             text-align: center;
+            padding: 20px;
+        }
+        .container {
+            @apply flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-2xl;
+            max-width: 90vw;
+            width: 400px;
+        }
+        .info-text {
+            @apply text-lg font-medium mb-2;
+        }
+        .main-button {
+            @apply font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-300 transform active:scale-95 text-xl mt-6;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
         }
         #game-area {
             width: 90vw;
@@ -27,7 +43,7 @@
             border: 2px solid #333;
             position: relative;
             background-color: #fff;
-            overflow: hidden; /* Ne lógjon ki az érme */
+            overflow: hidden;
         }
         #coin {
             width: 50px;
@@ -39,94 +55,113 @@
             cursor: pointer;
             transition: all 0.1s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            display: none; /* Kezdetben rejtett */
         }
-        #coin:active {
-            transform: scale(0.9);
-        }
-        .info-panel {
-            font-size: 24px;
-            margin: 15px;
-        }
-        button {
-            font-size: 20px;
-            padding: 10px 20px;
-            margin-top: 20px;
-            border-radius: 8px;
-            border: none;
-            background-color: #0088cc;
-            color: white;
-            cursor: pointer;
-        }
-        #send-score-button {
-            background-color: #28a745;
-            display: none; /* Kezdetben rejtett */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
         }
     </style>
 </head>
 <body>
 
-    <h1>Kapd el az Érmét!</h1>
+    <div id="start-screen" class="container">
+        <h1 class="text-3xl font-bold mb-4">Üdvözöllek!</h1>
+        <p class="info-text">Telegram neved: <span id="user-name"></span></p>
+        <p class="info-text">Felhasználó azonosító: <span id="user-id"></span></p>
+        <button id="start-game-button" class="main-button">Játék Indítása</button>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div class="info-panel">
+            Pontszám: <span id="score">0</span> | Idő: <span id="time">15</span>s
+        </div>
+        <div id="game-area">
+            <div id="coin"></div>
+        </div>
+    </div>
     
-    <div class="info-panel">
-        Pontszám: <span id="score">0</span> | Idő: <span id="time">30</span>s
+    <div id="end-screen" class="container hidden">
+        <h1 class="text-3xl font-bold mb-4">Játék Vége!</h1>
+        <p class="info-text">Pontszámod: <span id="final-score">0</span></p>
+        <div class="button-group">
+            <button id="restart-game-button" class="main-button">Új játék</button>
+            <button id="send-score-button" class="main-button">Kilépés</button>
+        </div>
     </div>
-
-    <div id="game-area">
-        <div id="coin"></div>
-    </div>
-
-    <button id="start-button">Játék Indítása</button>
-    <button id="send-score-button">Pontszám elküldése</button>
 
     <script>
-        // JavaScript Logika
+        const startScreen = document.getElementById('start-screen');
+        const gameContainer = document.getElementById('game-container');
+        const endScreen = document.getElementById('end-screen');
 
-        // 1. Elemek elérése a DOM-ból (VÁLTOZATLAN)
+        const userNameSpan = document.getElementById('user-name');
+        const userIdSpan = document.getElementById('user-id');
+        const startGameButton = document.getElementById('start-game-button');
+        const sendScoreButton = document.getElementById('send-score-button');
+        const restartGameButton = document.getElementById('restart-game-button');
+
         const gameArea = document.getElementById('game-area');
         const coin = document.getElementById('coin');
         const scoreDisplay = document.getElementById('score');
         const timeLeftDisplay = document.getElementById('time');
-        const startButton = document.getElementById('start-button');
-        const sendScoreButton = document.getElementById('send-score-button');
+        const finalScoreDisplay = document.getElementById('final-score');
 
-        // 2. Játék állapotát tároló változók (VÁLTOZATLAN)
         let score = 0;
-        let timeLeft = 30;
+        let timeLeft = 15;
         let gameInterval = null;
-        let isGameRunning = false;
 
-        // 3. Függvények (A sendScore módosult)
+        // Képernyőváltó függvény
+        function showScreen(screenId) {
+            startScreen.classList.add('hidden');
+            gameContainer.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        // Képernyő információinak megjelenítése és környezet ellenőrzése
+        if (window.Telegram.WebApp) {
+            const user = window.Telegram.WebApp.initDataUnsafe.user;
+            console.log("Játék elindítva a Telegram Web App környezetben.");
+            if (user) {
+                userNameSpan.textContent = user.first_name || 'N/A';
+                userIdSpan.textContent = user.id || 'N/A';
+                console.log(`Felhasználó neve: ${user.first_name}, ID: ${user.id}`);
+            } else {
+                userNameSpan.textContent = 'Ismeretlen';
+                userIdSpan.textContent = 'Ismeretlen';
+                console.log("A felhasználói adatok nem érhetők el.");
+            }
+            window.Telegram.WebApp.ready();
+        } else {
+            userNameSpan.textContent = 'Teszt Felhasználó';
+            userIdSpan.textContent = '123456789';
+            console.log("Játék elindítva böngészős teszt módban.");
+            console.log("Felhasználó neve: Teszt Felhasználó, ID: 123456789");
+        }
+
+        // Játéklogika
         function moveCoin() {
             const gameAreaWidth = gameArea.clientWidth;
             const gameAreaHeight = gameArea.clientHeight;
-            
             const randomX = Math.floor(Math.random() * (gameAreaWidth - 50));
             const randomY = Math.floor(Math.random() * (gameAreaHeight - 50));
-
             coin.style.left = randomX + 'px';
             coin.style.top = randomY + 'px';
         }
 
         function startGame() {
-            if (isGameRunning) return;
-
-            isGameRunning = true;
+            console.log("Játék indítása...");
+            showScreen('game-container');
             score = 0;
-            timeLeft = 30;
+            timeLeft = 15;
             scoreDisplay.textContent = score;
             timeLeftDisplay.textContent = timeLeft;
-
-            startButton.style.display = 'none';
-            sendScoreButton.style.display = 'none';
-            coin.style.display = 'block';
-            
             moveCoin();
-
+            
             gameInterval = setInterval(() => {
                 timeLeft--;
                 timeLeftDisplay.textContent = timeLeft;
-
                 if (timeLeft <= 0) {
                     endGame();
                 }
@@ -134,45 +169,42 @@
         }
 
         function endGame() {
+            console.log("Játék vége!");
             clearInterval(gameInterval);
-            isGameRunning = false;
-            coin.style.display = 'none';
-            alert('Játék vége! A pontszámod: ' + score);
-            
-            startButton.style.display = 'inline-block';
-            if (score > 0) {
-                sendScoreButton.style.display = 'inline-block';
-            }
+            finalScoreDisplay.textContent = score;
+            showScreen('end-screen');
         }
 
         function onCoinClick() {
-            if (!isGameRunning) return;
             score++;
             scoreDisplay.textContent = score;
             moveCoin();
         }
 
-        // 2. JAVÍTÁS: A pontszámküldés helyes módja a games.js API-val
-        function sendScore() {
-            // Ez a funkció beállítja a felhasználó pontszámát.
-            // A Telegram automatikusan kezeli a toplistát és küld üzenetet a chatbe,
-            // ha a felhasználó új rekordot ért el.
-            if (window.TelegramGameProxy) {
-                window.TelegramGameProxy.setScore(score);
-                alert("Pontszám (" + score + ") elküldve a Telegramnak!");
-                sendScoreButton.style.display = 'none'; // Elrejtjük a gombot küldés után
+        function sendScoreAndExit() {
+            console.log("Pontszám elküldése és kilépés...");
+            if (window.Telegram.WebApp) {
+                try {
+                    window.Telegram.WebApp.sendData(JSON.stringify({
+                        action: "game_score",
+                        score: score
+                    }));
+                } catch (e) {
+                    console.error("Hiba a sendData() hívásakor:", e);
+                }
             } else {
-                alert("Hiba: A játékot nem a Telegramon belül futtatod.");
+                alert(`Pontszám elküldése: ${score} - Ez a funkció csak a Telegram alkalmazásban érhető el!`);
             }
         }
-
-        // 4. Eseménykezelők (VÁLTOZATLAN)
-        startButton.addEventListener('click', startGame);
-        coin.addEventListener('click', onCoinClick);
-        sendScoreButton.addEventListener('click', sendScore);
         
-        // 3. JAVÍTÁS: A 'Telegram.WebApp.ready()' hívás eltávolítva,
-        // mert a games.js-nek nincs rá szüksége.
+        // Eseménykezelők
+        startGameButton.addEventListener('click', startGame);
+        coin.addEventListener('click', onCoinClick);
+        sendScoreButton.addEventListener('click', sendScoreAndExit);
+        restartGameButton.addEventListener('click', () => {
+            showScreen('start-screen');
+        });
+
     </script>
 </body>
 </html>
