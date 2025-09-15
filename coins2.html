@@ -36,6 +36,14 @@
             cursor: pointer;
             width: 100%;
         }
+        .exit-button {
+            @apply font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-300 transform active:scale-95 text-xl mt-4;
+            background-color: #e53e3e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -45,13 +53,15 @@
         <p class="info-text">Telegram neved: <span id="user-name"></span></p>
         <p class="info-text">Felhasználó azonosító: <span id="user-id"></span></p>
         
-        <button id="main-button" class="main-button">Gomb megnyomása</button>
+        <button id="main-button" class="main-button">Folytatás a játékban</button>
+        <button id="exit-button" class="exit-button">Pontszám elküldése és kilépés</button>
     </div>
 
     <script>
         const userNameSpan = document.getElementById('user-name');
         const userIdSpan = document.getElementById('user-id');
         const mainButton = document.getElementById('main-button');
+        const exitButton = document.getElementById('exit-button');
 
         // Ellenőrzi, hogy a Telegram Web App objektum elérhető-e
         if (window.Telegram.WebApp) {
@@ -76,13 +86,17 @@
         }
 
         mainButton.addEventListener('click', () => {
-            console.log("Gomb megnyomva!");
+            console.log("Folytatás a játékban gomb megnyomva! A Web App NEM zár be.");
+        });
+
+        exitButton.addEventListener('click', () => {
+            console.log("Kilépés gomb megnyomva!");
             if (window.Telegram.WebApp) {
                 try {
                     window.Telegram.WebApp.sendData(JSON.stringify({
-                        action: "button_pressed"
+                        action: "exit_and_submit_score"
                     }));
-                    console.log("Üzenet elküldve a botnak a Telegramon keresztül!");
+                    console.log("Üzenet elküldve a botnak a Telegramon keresztül! A Web App bezárul.");
                 } catch (e) {
                     console.error("Hiba a sendData() hívásakor:", e);
                 }
