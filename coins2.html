@@ -2,177 +2,166 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapd el az Érmét!</title>
-    <!-- 1. JAVÍTÁS: A helyes szkript a 'send_game'-hez indított játékokhoz -->
-    <script src="https://telegram.org/js/games.js"></script>
+    <title>Coin Catching Game 2</title>
     <style>
-        /* CSS Stílusok (VÁLTOZATLAN) */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
-            color: #333;
-            text-align: center;
-        }
-        #game-area {
-            width: 90vw;
-            height: 60vh;
-            max-width: 400px;
-            border: 2px solid #333;
+            background-color: #555;
+            color: white;
             position: relative;
-            background-color: #fff;
-            overflow: hidden; /* Ne lógjon ki az érme */
+        }
+        #game-container {
+            width: 90%;
+            height: 70vh;
+            border: 2px solid cyan;
+            position: relative;
+            background-color: #444;
+            cursor: pointer;
+            overflow: hidden;
+            display: none; /* Rejtett a kezdetekor */
         }
         #coin {
-            width: 50px;
-            height: 50px;
-            background-color: gold;
+            width: 60px;
+            height: 60px;
+            background-color: cyan;
             border-radius: 50%;
-            border: 2px solid darkorange;
             position: absolute;
             cursor: pointer;
-            transition: all 0.1s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            display: none; /* Kezdetben rejtett */
-        }
-        #coin:active {
-            transform: scale(0.9);
-        }
-        .info-panel {
+            transition: transform 0.2s ease-out;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            display: none; /* Rejtett a kezdetekor */
+            text-align: center;
+            line-height: 60px;
+            font-weight: bold;
+            color: black;
             font-size: 24px;
-            margin: 15px;
         }
-        button {
-            font-size: 20px;
-            padding: 10px 20px;
+        #coin:hover {
+            transform: scale(1.2);
+        }
+        #score-display, #send-score-btn {
             margin-top: 20px;
-            border-radius: 8px;
-            border: none;
-            background-color: #0088cc;
-            color: white;
-            cursor: pointer;
+            font-size: 28px;
+            display: none; /* Rejtett a kezdetekor */
         }
-        #send-score-button {
+        #send-score-btn {
+            padding: 10px 20px;
+            background-color: #008080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        #send-score-btn:hover {
+            background-color: #006666;
+        }
+        #start-game-btn {
+            padding: 15px 30px;
+            font-size: 24px;
             background-color: #28a745;
-            display: none; /* Kezdetben rejtett */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #start-game-btn:hover {
+            background-color: #218838;
         }
     </style>
 </head>
 <body>
 
-    <h1>Kapd el az Érmét!</h1>
-    
-    <div class="info-panel">
-        Pontszám: <span id="score">0</span> | Idő: <span id="time">30</span>s
+    <h1>Coin Catching Game 2</h1>
+    <button id="start-game-btn">Start Game</button>
+    <div id="game-container">
+        <div id="coin">2</div>
     </div>
-
-    <div id="game-area">
-        <div id="coin"></div>
-    </div>
-
-    <button id="start-button">Játék Indítása</button>
-    <button id="send-score-button">Pontszám elküldése</button>
+    <div id="score-display">Pontszám: 0</div>
+    <button id="send-score-btn">Pontszám küldése a botnak</button>
 
     <script>
-        // JavaScript Logika
-
-        // 1. Elemek elérése a DOM-ból (VÁLTOZATLAN)
-        const gameArea = document.getElementById('game-area');
+        const gameContainer = document.getElementById('game-container');
         const coin = document.getElementById('coin');
-        const scoreDisplay = document.getElementById('score');
-        const timeLeftDisplay = document.getElementById('time');
-        const startButton = document.getElementById('start-button');
-        const sendScoreButton = document.getElementById('send-score-button');
-
-        // 2. Játék állapotát tároló változók (VÁLTOZATLAN)
+        const scoreDisplay = document.getElementById('score-display');
+        const sendScoreBtn = document.getElementById('send-score-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
         let score = 0;
-        let timeLeft = 30;
-        let gameInterval = null;
-        let isGameRunning = false;
+        let isStarted = false;
 
-        // 3. Függvények (A sendScore módosult)
+        const Telegram = window.Telegram.WebApp;
+
+        function getRandomPosition() {
+            const containerWidth = gameContainer.offsetWidth - coin.offsetWidth;
+            const containerHeight = gameContainer.offsetHeight - coin.offsetHeight;
+            const x = Math.random() * containerWidth;
+            const y = Math.random() * containerHeight;
+            return { x, y };
+        }
+
         function moveCoin() {
-            const gameAreaWidth = gameArea.clientWidth;
-            const gameAreaHeight = gameArea.clientHeight;
-            
-            const randomX = Math.floor(Math.random() * (gameAreaWidth - 50));
-            const randomY = Math.floor(Math.random() * (gameAreaHeight - 50));
-
-            coin.style.left = randomX + 'px';
-            coin.style.top = randomY + 'px';
+            if (!isStarted) return;
+            const { x, y } = getRandomPosition();
+            coin.style.left = `${x}px`;
+            coin.style.top = `${y}px`;
+            coin.style.display = 'block';
         }
 
         function startGame() {
-            if (isGameRunning) return;
-
-            isGameRunning = true;
+            startGameBtn.style.display = 'none';
+            gameContainer.style.display = 'block';
+            scoreDisplay.style.display = 'block';
+            sendScoreBtn.style.display = 'block';
+            isStarted = true;
             score = 0;
-            timeLeft = 30;
-            scoreDisplay.textContent = score;
-            timeLeftDisplay.textContent = timeLeft;
-
-            startButton.style.display = 'none';
-            sendScoreButton.style.display = 'none';
-            coin.style.display = 'block';
-            
+            scoreDisplay.textContent = `Pontszám: ${score}`;
             moveCoin();
-
-            gameInterval = setInterval(() => {
-                timeLeft--;
-                timeLeftDisplay.textContent = timeLeft;
-
-                if (timeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
         }
 
-        function endGame() {
-            clearInterval(gameInterval);
-            isGameRunning = false;
-            coin.style.display = 'none';
-            alert('Játék vége! A pontszámod: ' + score);
-            
-            startButton.style.display = 'inline-block';
-            if (score > 0) {
-                sendScoreButton.style.display = 'inline-block';
-            }
-        }
-
-        function onCoinClick() {
-            if (!isGameRunning) return;
+        coin.addEventListener('click', (e) => {
+            e.stopPropagation();
             score++;
-            scoreDisplay.textContent = score;
+            scoreDisplay.textContent = `Pontszám: ${score}`;
             moveCoin();
-        }
+        });
 
-        // 2. JAVÍTÁS: A pontszámküldés helyes módja a games.js API-val
-        function sendScore() {
-            // Ez a funkció beállítja a felhasználó pontszámát.
-            // A Telegram automatikusan kezeli a toplistát és küld üzenetet a chatbe,
-            // ha a felhasználó új rekordot ért el.
-            if (window.TelegramGameProxy) {
-                window.TelegramGameProxy.setScore(score);
-                alert("Pontszám (" + score + ") elküldve a Telegramnak!");
-                sendScoreButton.style.display = 'none'; // Elrejtjük a gombot küldés után
+        sendScoreBtn.addEventListener('click', () => {
+            if (score > 0) {
+                const data = {
+                    message: `A játékból érkező pontszám: ${score}`,
+                    user_id: Telegram.initDataUnsafe.user.id
+                };
+                fetch("http://localhost:5001/send_message", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Üzenet sikeresen elküldve a botnak!");
+                    } else {
+                        alert("Hiba történt az üzenet küldésekor.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Hiba:', error);
+                    alert("Hálózati hiba történt.");
+                });
             } else {
-                alert("Hiba: A játékot nem a Telegramon belül futtatod.");
+                alert("Nincs mit elküldeni! Gyűjts pontokat.");
             }
-        }
+        });
 
-        // 4. Eseménykezelők (VÁLTOZATLAN)
-        startButton.addEventListener('click', startGame);
-        coin.addEventListener('click', onCoinClick);
-        sendScoreButton.addEventListener('click', sendScore);
-        
-        // 3. JAVÍTÁS: A 'Telegram.WebApp.ready()' hívás eltávolítva,
-        // mert a games.js-nek nincs rá szüksége.
+        startGameBtn.addEventListener('click', startGame);
     </script>
 </body>
 </html>
