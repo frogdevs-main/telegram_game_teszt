@@ -3,161 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapd el az Érmét!</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Játék Gomb</title>
+    <!-- Tailwind CSS CDN a stílusozáshoz -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            color: #2d3748;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        #game-area {
-            width: 90vw;
-            height: 60vh;
-            max-width: 400px;
-            border: 2px solid #333;
-            position: relative;
-            background-color: #fff;
-            overflow: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        #coin {
-            width: 50px;
-            height: 50px;
-            position: absolute;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            transform-origin: center;
-            user-select: none;
-            display: none;
-        }
-        #coin:active {
-            transform: scale(0.9);
-        }
-        .info-panel {
-            font-size: 24px;
-            margin: 15px;
-        }
-        button {
-            @apply font-bold py-2 px-6 rounded-full shadow-lg transition-all duration-300 transform active:scale-95;
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #send-score-button {
-            @apply bg-green-500 hover:bg-green-600;
-            display: none;
-        }
-    </style>
+    <!-- Telegram Web App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body>
-
-    <h1 class="text-3xl font-bold mb-4">Kapd el az Érmét!</h1>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     
-    <div class="info-panel">
-        Pontszám: <span id="score">0</span> | Idő: <span id="time">30</span>s
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-6 transform transition-all duration-300 hover:scale-105">
+        
+        <h1 class="text-2xl font-bold text-gray-700">Nyomd meg a gombot</h1>
+        
+        <button 
+            id="notify-button"
+            class="w-full py-4 px-6 rounded-full text-lg font-bold text-white bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg"
+        >
+            Gomb megnyomása
+        </button>
+
+        <p id="status-message" class="text-sm text-gray-500 mt-4"></p>
+        
     </div>
 
-    <div id="game-area">
-        <svg id="coin" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#FFD700"/>
-            <path d="M12 4c-3.31 0-6 2.69-6 6h2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.11-.5 2.11-1.3 2.82-.8.71-1.7 1.25-2.7 1.63V15h-2v-1.5c-2.45-.63-4-2.88-4-5.5 0-3.31 2.69-6 6-6s6 2.69 6 6h-2c0-2.21-1.79-4-4-4z" fill="#FFA500"/>
-        </svg>
-    </div>
-
-    <div class="mt-4 flex flex-col space-y-4 max-w-sm w-full">
-        <button id="start-button" class="bg-blue-500 hover:bg-blue-600">Játék Indítása</button>
-        <button id="send-score-button">Pontszám elküldése a botnak</button>
-    </div>
-    
     <script>
-        const gameArea = document.getElementById('game-area');
-        const coin = document.getElementById('coin');
-        const scoreDisplay = document.getElementById('score');
-        const timeLeftDisplay = document.getElementById('time');
-        const startButton = document.getElementById('start-button');
-        const sendScoreButton = document.getElementById('send-score-button');
-
-        let score = 0;
-        let timeLeft = 30;
-        let gameInterval = null;
-        let isGameRunning = false;
-        
-        function moveCoin() {
-            const gameAreaWidth = gameArea.clientWidth;
-            const gameAreaHeight = gameArea.clientHeight;
-            const randomX = Math.floor(Math.random() * (gameAreaWidth - 50));
-            const randomY = Math.floor(Math.random() * (gameAreaHeight - 50));
-            coin.style.left = randomX + 'px';
-            coin.style.top = randomY + 'px';
-        }
-
-        function startGame() {
-            if (isGameRunning) return;
-            isGameRunning = true;
-            score = 0;
-            timeLeft = 30;
-            scoreDisplay.textContent = score;
-            timeLeftDisplay.textContent = timeLeft;
-            startButton.style.display = 'none';
-            sendScoreButton.style.display = 'none';
-            coin.style.display = 'block';
-            moveCoin();
-            gameInterval = setInterval(() => {
-                timeLeft--;
-                timeLeftDisplay.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
-        }
-
-        function endGame() {
-            clearInterval(gameInterval);
-            isGameRunning = false;
-            coin.style.display = 'none';
-            startButton.style.display = 'inline-block';
-            if (score > 0) {
-                sendScoreButton.style.display = 'inline-block';
-            }
-        }
-
-        function onCoinClick() {
-            if (!isGameRunning) return;
-            score++;
-            scoreDisplay.textContent = score;
-            moveCoin();
-        }
-
-        // Új funkció a pontszám küldéséhez
-        function sendScoreToBot() {
-            try {
-                // Pontszám elküldése JSON formátumban
-                window.Telegram.WebApp.sendData(JSON.stringify({
-                    action: "score_update",
-                    score: score
-                }));
-                console.log("Pontszám elküldve a botnak: " + score);
-            } catch (e) {
-                console.error("Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.", e);
-            }
-        }
-        
-        startButton.addEventListener('click', startGame);
-        coin.addEventListener('click', onCoinClick);
-        sendScoreButton.addEventListener('click', sendScoreToBot);
-        
+        // Jelezzük a Telegram kliensnek, hogy a web app készen áll
         window.Telegram.WebApp.ready();
+
+        const notifyButton = document.getElementById('notify-button');
+        const statusMessage = document.getElementById('status-message');
+
+        notifyButton.addEventListener('click', () => {
+            try {
+                // A 'data' mezőben küldött adatnak stringnek kell lennie
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    action: "button_pressed"
+                }));
+                statusMessage.textContent = "Üzenet elküldve!";
+            } catch (e) {
+                statusMessage.textContent = "Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.";
+                console.error("Hiba a sendData() hívásakor:", e);
+            }
+        });
     </script>
 </body>
 </html>
