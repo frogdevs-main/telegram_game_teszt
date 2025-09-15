@@ -3,46 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Játék Gomb</title>
-    <!-- Tailwind CSS CDN a stílusozáshoz -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Telegram Web App API -->
+    <title>Kezdőképernyő</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #2d3748;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            @apply flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-2xl;
+            max-width: 90vw;
+            width: 400px;
+        }
+        .info-text {
+            @apply text-lg font-medium mb-2;
+        }
+        .main-button {
+            @apply font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-300 transform active:scale-95 text-xl mt-6;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    
-    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-6 transform transition-all duration-300 hover:scale-105">
-        
-        <h1 class="text-2xl font-bold text-gray-700">Nyomd meg a gombot</h1>
-        
-        <button 
-            id="notify-button"
-            class="w-full py-4 px-6 rounded-full text-lg font-bold text-white bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg"
-        >
-            Gomb megnyomása
-        </button>
+<body>
 
-        <p id="status-message" class="text-sm text-gray-500 mt-4"></p>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4">Üdvözöllek!</h1>
+        <p class="info-text">Telegram neved: <span id="user-name"></span></p>
+        <p class="info-text">Felhasználó azonosító: <span id="user-id"></span></p>
         
+        <button id="main-button" class="main-button">Gomb megnyomása</button>
     </div>
 
     <script>
-        // Jelezzük a Telegram kliensnek, hogy a web app készen áll
-        window.Telegram.WebApp.ready();
+        const userNameSpan = document.getElementById('user-name');
+        const userIdSpan = document.getElementById('user-id');
+        const mainButton = document.getElementById('main-button');
 
-        const notifyButton = document.getElementById('notify-button');
-        const statusMessage = document.getElementById('status-message');
+        // Ellenőrzi, hogy a Telegram Web App objektum elérhető-e
+        if (window.Telegram.WebApp) {
+            const user = window.Telegram.WebApp.initDataUnsafe.user;
+            console.log("Játék elindítva a Telegram Web App környezetben.");
+            if (user) {
+                userNameSpan.textContent = user.first_name || 'N/A';
+                userIdSpan.textContent = user.id || 'N/A';
+                console.log(`Felhasználó neve: ${user.first_name}, ID: ${user.id}`);
+            } else {
+                userNameSpan.textContent = 'Ismeretlen';
+                userIdSpan.textContent = 'Ismeretlen';
+                console.log("A felhasználói adatok nem érhetők el.");
+            }
+            window.Telegram.WebApp.ready();
+        } else {
+            // Ez a rész a tesztelésre szolgál böngészőben
+            userNameSpan.textContent = 'Teszt Felhasználó';
+            userIdSpan.textContent = '123456789';
+            console.log("Játék elindítva böngészős teszt módban.");
+            console.log("Felhasználó neve: Teszt Felhasználó, ID: 123456789");
+        }
 
-        notifyButton.addEventListener('click', () => {
-            try {
-                // A 'data' mezőben küldött adatnak stringnek kell lennie
-                window.Telegram.WebApp.sendData(JSON.stringify({
-                    action: "button_pressed"
-                }));
-                statusMessage.textContent = "Üzenet elküldve!";
-            } catch (e) {
-                statusMessage.textContent = "Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.";
-                console.error("Hiba a sendData() hívásakor:", e);
+        mainButton.addEventListener('click', () => {
+            console.log("Gomb megnyomva!");
+            if (window.Telegram.WebApp) {
+                try {
+                    window.Telegram.WebApp.sendData(JSON.stringify({
+                        action: "button_pressed"
+                    }));
+                    console.log("Üzenet elküldve a botnak a Telegramon keresztül!");
+                } catch (e) {
+                    console.error("Hiba a sendData() hívásakor:", e);
+                }
+            } else {
+                alert("Ez a funkció csak a Telegram alkalmazásban érhető el!");
             }
         });
     </script>
