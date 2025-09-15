@@ -136,7 +136,7 @@
             clearInterval(gameInterval);
             isGameRunning = false;
             coin.style.display = 'none';
-            alert('Játék vége! A pontszámod: ' + score);
+            console.log('Játék vége! A pontszámod: ' + score);
             startButton.style.display = 'inline-block';
             if (score > 0) {
                 sendScoreButton.style.display = 'inline-block';
@@ -157,9 +157,9 @@
                 window.Telegram.WebApp.sendData(JSON.stringify({
                     action: "game_button_pressed"
                 }));
-                alert("Üzenet elküldve a botnak a Telegramon keresztül!");
+                console.log("Üzenet elküldve a botnak a Telegramon keresztül!");
             } catch (e) {
-                alert("Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.");
+                console.log("Hiba: Az üzenetküldés csak a Telegram alkalmazáson belül működik.");
                 console.error(e);
             }
         }
@@ -167,7 +167,7 @@
         function sendScore() {
             // A games.js API-t már nem használjuk, így ez a funkció egyelőre nem csinál semmit.
             // A toplistát a Web App logikával, a saját szervereden keresztül lehetne megvalósítani.
-            alert("A pontszámküldés ehhez a verzióhoz nincs implementálva.");
+            console.log("A pontszámküldés ehhez a verzióhoz nincs implementálva.");
         }
         
         // Eseménykezelők
